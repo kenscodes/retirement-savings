@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackRock Retirement Savings API</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface2: #1a1a26;
+            --border: #2a2a3a;
+            --text: #e4e4ef;
+            --text-dim: #8888a0;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --green: #22c55e;
+            --green-glow: rgba(34, 197, 94, 0.15);
+            --red: #ef4444;
+            --orange: #f59e0b;
+        }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .header {
+            padding: 24px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(99,102,241,0.04) 0%, transparent 100%);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: white;
+        }
+        .logo-text { font-size: 18px; font-weight: 600; }
+        .logo-text span { color: var(--text-dim); font-weight: 400; }
+        .status-badge {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 14px; border-radius: 20px;
+            background: var(--green-glow); border: 1px solid rgba(34,197,94,0.3);
+            font-size: 12px; font-weight: 500; color: var(--green);
+        }
+        .status-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px 40px; }
+        .tabs {
+            display: flex; gap: 4px; margin-bottom: 28px;
+            background: var(--surface); border-radius: 12px;
+            padding: 4px; border: 1px solid var(--border);
+        }
+        .tab {
+            padding: 10px 18px; border-radius: 8px;
+            font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s;
+            color: var(--text-dim); border: none;
+            background: transparent; white-space: nowrap;
+        }
+        .tab:hover { color: var(--text); background: var(--surface2); }
+        .tab.active {
+            background: var(--accent); color: white;
+            box-shadow: 0 2px 12px rgba(99,102,241,0.3);
+        }
+        .method-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+            margin-right: 6px;
+        }
+        .method-post { background: rgba(34,197,94,0.15); color: var(--green); }
+        .method-get { background: rgba(99,102,241,0.15); color: var(--accent); }
+        .endpoint-panel { display: none; }
+        .endpoint-panel.active { display: block; }
+        .panel-header {
+            margin-bottom: 20px;
+        }
+        .panel-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+        .panel-path {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px; color: var(--text-dim);
+            background: var(--surface); padding: 6px 12px;
+            border-radius: 6px; display: inline-block;
+            border: 1px solid var(--border);
+        }
+        .panel-desc { color: var(--text-dim); font-size: 14px; margin-top: 10px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .box {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; overflow: hidden;
+        }
+        .box-header {
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 12px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-dim);
+        }
+        .box-body { padding: 0; }
+        textarea {
+            width: 100%; min-height: 320px; padding: 16px;
+            background: transparent; border: none; outline: none;
+            color: var(--text); font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px; line-height: 1.6; resize: vertical;
+        }
+        .output-area {
+            width: 100%; min-height: 320px; padding: 16px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px; line-height: 1.6;
+            white-space: pre-wrap; word-break: break-word;
+            overflow-y: auto; color: var(--green);
+        }
+        .output-area.error { color: var(--red); }
+        .output-area.waiting { color: var(--text-dim); }
+        .btn-send {
+            padding: 10px 24px; border-radius: 8px;
+            background: var(--accent); color: white;
+            border: none; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-send:hover {
+            background: #5558e6;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+            transform: translateY(-1px);
+        }
+        .btn-send:active { transform: translateY(0); }
+        .btn-send.loading {
+            opacity: 0.7; pointer-events: none;
+        }
+        .timing {
+            font-size: 11px; color: var(--text-dim);
+            font-family: 'SF Mono', monospace;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            .container { padding: 20px; }
+            .tabs { overflow-x: auto; }
+            .header { padding: 16px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="logo">
+        <div class="logo-icon">B</div>
+        <div class="logo-text">Retirement Savings <span>API Console</span></div>
+    </div>
+    <div class="status-badge">
+        <div class="status-dot"></div>
+        Connected — port 5477
+    </div>
+</div>
+
+<div class="container">
+    <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="parse">
+            <span class="method-badge method-post">POST</span>Parse
+        </button>
+        <button class="tab" data-tab="validator">
+            <span class="method-badge method-post">POST</span>Validator
+        </button>
+        <button class="tab" data-tab="filter">
+            <span class="method-badge method-post">POST</span>Filter
+        </button>
+        <button class="tab" data-tab="nps">
+            <span class="method-badge method-post">POST</span>NPS Returns
+        </button>
+        <button class="tab" data-tab="index">
+            <span class="method-badge method-post">POST</span>Index Returns
+        </button>
+        <button class="tab" data-tab="performance">
+            <span class="method-badge method-get">GET</span>Performance
+        </button>
+    </div>
+
+    <!-- 1. Transaction Parse -->
+    <div class="endpoint-panel active" id="panel-parse">
+        <div class="panel-header">
+            <div class="panel-title">Transaction Builder</div>
+            <div class="panel-path">/blackrock/challenge/v1/transactions/parse</div>
+            <div class="panel-desc">Receives expenses and enriches them with ceiling and remanent values.</div>
+        </div>
+        <div class="grid">
+            <div class="box">
+                <div class="box-header"><span>Request Body</span><button class="btn-send" onclick="sendRequest('parse')">Send ▸</button></div>
+                <div class="box-body">
+                    <textarea id="input-parse">[
+  {"date": "2023-10-12 20:15:38", "amount": 250},
+  {"date": "2023-02-28 15:49:28", "amount": 375},
+  {"date": "2023-07-01 21:59:00", "amount": 620},
+  {"date": "2023-12-17 08:09:45", "amount": 480}
+]</textarea>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-header"><span>Response</span><span class="timing" id="time-parse"></span></div>
+                <div class="box-body">
+                    <div class="output-area waiting" id="output-parse">Click "Send" to test this endpoint...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Transaction Validator -->
+    <div class="endpoint-panel" id="panel-validator">
+        <div class="panel-header">
+            <div class="panel-title">Transaction Validator</div>
+            <div class="panel-path">/blackrock/challenge/v1/transactions/validator</div>
+            <div class="panel-desc">Validates transactions for negative amounts and duplicates.</div>
+        </div>
+        <div class="grid">
+            <div class="box">
+                <div class="box-header"><span>Request Body</span><button class="btn-send" onclick="sendRequest('validator')">Send ▸</button></div>
+                <div class="box-body">
+                    <textarea id="input-validator">{
+  "wage": 90000,
+  "transactions": [
+    {"date": "2023-01-15 10:00:00", "amount": 1000, "ceiling": 1100, "remanent": 100},
+    {"date": "2023-03-20 14:49:00", "amount": 3500, "ceiling": 3600, "remanent": 100},
+    {"date": "2023-03-20 14:49:00", "amount": 250, "ceiling": 300, "remanent": 50},
+    {"date": "2023-07-10 09:15:00", "amount": -250, "ceiling": 300, "remanent": 50}
+  ]
+}</textarea>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-header"><span>Response</span><span class="timing" id="time-validator"></span></div>
+                <div class="box-body">
+                    <div class="output-area waiting" id="output-validator">Click "Send" to test this endpoint...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Temporal Filter -->
+    <div class="endpoint-panel" id="panel-filter">
+        <div class="panel-header">
+            <div class="panel-title">Temporal Constraints Validator</div>
+            <div class="panel-path">/blackrock/challenge/v1/transactions/filter</div>
+            <div class="panel-desc">Applies q/p/k period rules to determine valid and invalid transactions.</div>
+        </div>
+        <div class="grid">
+            <div class="box">
+                <div class="box-header"><span>Request Body</span><button class="btn-send" onclick="sendRequest('filter')">Send ▸</button></div>
+                <div class="box-body">
+                    <textarea id="input-filter">{
+  "q": [{"fixed": 0, "start": "2023-07-01 00:00:00", "end": "2023-07-31 23:59:59"}],
+  "p": [{"extra": 25, "start": "2023-10-01 08:00:00", "end": "2023-12-31 19:59:59"}],
+  "k": [{"start": "2023-01-01 00:00:00", "end": "2023-12-31 23:59:59"}],
+  "wage": 50000,
+  "transactions": [
+    {"date": "2023-02-28 15:49:00", "amount": 375, "ceiling": 400, "remanent": 25},
+    {"date": "2023-07-01 21:59:00", "amount": 620, "ceiling": 700, "remanent": 80},
+    {"date": "2023-10-12 20:15:00", "amount": 250, "ceiling": 300, "remanent": 50},
+    {"date": "2023-12-17 08:09:45", "amount": 480, "ceiling": 500, "remanent": 20}
+  ]
+}</textarea>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-header"><span>Response</span><span class="timing" id="time-filter"></span></div>
+                <div class="box-body">
+                    <div class="output-area waiting" id="output-filter">Click "Send" to test this endpoint...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. NPS Returns -->
+    <div class="endpoint-panel" id="panel-nps">
+        <div class="panel-header">
+            <div class="panel-title">NPS Returns Calculation</div>
+            <div class="panel-path">/blackrock/challenge/v1/returns/nps</div>
+            <div class="panel-desc">Calculates NPS investment returns at 7.11% with tax benefits.</div>
+        </div>
+        <div class="grid">
+            <div class="box">
+                <div class="box-header"><span>Request Body</span><button class="btn-send" onclick="sendRequest('nps')">Send ▸</button></div>
+                <div class="box-body">
+                    <textarea id="input-nps">{
+  "age": 29,
+  "wage": 50000,
+  "inflation": 5.5,
+  "q": [{"fixed": 0, "start": "2023-07-01 00:00:00", "end": "2023-07-31 23:59:59"}],
+  "p": [{"extra": 25, "start": "2023-10-01 08:00:00", "end": "2023-12-31 19:59:59"}],
+  "k": [
+    {"start": "2023-01-01 00:00:00", "end": "2023-12-31 23:59:59"},
+    {"start": "2023-03-01 00:00:00", "end": "2023-11-30 23:59:59"}
+  ],
+  "transactions": [
+    {"date": "2023-10-12 20:15:00", "amount": 250},
+    {"date": "2023-02-28 15:49:00", "amount": 375},
+    {"date": "2023-07-01 21:59:00", "amount": 620},
+    {"date": "2023-12-17 08:09:00", "amount": 480}
+  ]
+}</textarea>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-header"><span>Response</span><span class="timing" id="time-nps"></span></div>
+                <div class="box-body">
+                    <div class="output-area waiting" id="output-nps">Click "Send" to test this endpoint...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Index Returns -->
+    <div class="endpoint-panel" id="panel-index">
+        <div class="panel-header">
+            <div class="panel-title">NIFTY 50 Index Returns</div>
+            <div class="panel-path">/blackrock/challenge/v1/returns/index</div>
+            <div class="panel-desc">Calculates NIFTY 50 returns at 14.49% (no tax benefit).</div>
+        </div>
+        <div class="grid">
+            <div class="box">
+                <div class="box-header"><span>Request Body</span><button class="btn-send" onclick="sendRequest('index')">Send ▸</button></div>
+                <div class="box-body">
+                    <textarea id="input-index">{
+  "age": 29,
+  "wage": 50000,
+  "inflation": 5.5,
+  "q": [{"fixed": 0, "start": "2023-07-01 00:00:00", "end": "2023-07-31 23:59:59"}],
+  "p": [{"extra": 25, "start": "2023-10-01 08:00:00", "end": "2023-12-31 19:59:59"}],
+  "k": [
+    {"start": "2023-01-01 00:00:00", "end": "2023-12-31 23:59:59"},
+    {"start": "2023-03-01 00:00:00", "end": "2023-11-30 23:59:59"}
+  ],
+  "transactions": [
+    {"date": "2023-10-12 20:15:00", "amount": 250},
+    {"date": "2023-02-28 15:49:00", "amount": 375},
+    {"date": "2023-07-01 21:59:00", "amount": 620},
+    {"date": "2023-12-17 08:09:00", "amount": 480}
+  ]
+}</textarea>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-header"><span>Response</span><span class="timing" id="time-index"></span></div>
+                <div class="box-body">
+                    <div class="output-area waiting" id="output-index">Click "Send" to test this endpoint...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Performance -->
+    <div class="endpoint-panel" id="panel-performance">
+        <div class="panel-header">
+            <div class="panel-title">Performance Report</div>
+            <div class="panel-path">/blackrock/challenge/v1/performance</div>
+            <div class="panel-desc">Reports system execution metrics: response time, memory usage, and thread count.</div>
+        </div>
+        <div class="grid">
+            <div class="box">
+                <div class="box-header"><span>No request body needed</span><button class="btn-send" onclick="sendRequest('performance')">Send ▸</button></div>
+                <div class="box-body">
+                    <div style="padding:16px; color: var(--text-dim); font-size: 14px;">
+                        This is a <strong style="color:var(--accent)">GET</strong> request — no input required.<br><br>
+                        Returns server uptime, memory usage (MB), and active thread count.
+                    </div>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-header"><span>Response</span><span class="timing" id="time-performance"></span></div>
+                <div class="box-body">
+                    <div class="output-area waiting" id="output-performance">Click "Send" to test this endpoint...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const ENDPOINTS = {
+    parse:       { method: 'POST', url: '/blackrock/challenge/v1/transactions/parse' },
+    validator:   { method: 'POST', url: '/blackrock/challenge/v1/transactions/validator' },
+    filter:      { method: 'POST', url: '/blackrock/challenge/v1/transactions/filter' },
+    nps:         { method: 'POST', url: '/blackrock/challenge/v1/returns/nps' },
+    index:       { method: 'POST', url: '/blackrock/challenge/v1/returns/index' },
+    performance: { method: 'GET',  url: '/blackrock/challenge/v1/performance' }
+};
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.endpoint-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+});
+
+async function sendRequest(key) {
+    const endpoint = ENDPOINTS[key];
+    const output = document.getElementById('output-' + key);
+    const timing = document.getElementById('time-' + key);
+    const btn = event.target.closest('.btn-send');
+
+    btn.classList.add('loading');
+    btn.textContent = 'Sending...';
+    output.className = 'output-area waiting';
+    output.textContent = 'Sending request...';
+
+    const start = performance.now();
+
+    try {
+        const options = { method: endpoint.method, headers: {} };
+        if (endpoint.method === 'POST') {
+            const input = document.getElementById('input-' + key);
+            options.headers['Content-Type'] = 'application/json';
+            // Validate JSON first
+            JSON.parse(input.value);
+            options.body = input.value;
+        }
+
+        const response = await fetch(endpoint.url, options);
+        const elapsed = (performance.now() - start).toFixed(0);
+        timing.textContent = elapsed + 'ms';
+
+        const data = await response.json();
+
+        if (response.ok) {
+            output.className = 'output-area';
+            output.textContent = JSON.stringify(data, null, 2);
+        } else {
+            output.className = 'output-area error';
+            output.textContent = 'HTTP ' + response.status + '\n\n' + JSON.stringify(data, null, 2);
+        }
+    } catch (err) {
+        const elapsed = (performance.now() - start).toFixed(0);
+        timing.textContent = elapsed + 'ms';
+        output.className = 'output-area error';
+        if (err instanceof SyntaxError) {
+            output.textContent = '✗ Invalid JSON in request body:\n\n' + err.message;
+        } else {
+            output.textContent = '✗ Request failed:\n\n' + err.message;
+        }
+    }
+
+    btn.classList.remove('loading');
+    btn.innerHTML = 'Send ▸';
+}
+</script>
+
+</body>
+</html>
