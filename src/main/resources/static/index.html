@@ -454,9 +454,9 @@ async function sendRequest(key) {
         timing.textContent = elapsed + 'ms';
         output.className = 'output-area error';
         if (err instanceof SyntaxError) {
-            output.textContent = '✗ Invalid JSON in request body:\n\n' + err.message;
+ output.textContent = ' Invalid JSON in request body:\n\n' + err.message;
         } else {
-            output.textContent = '✗ Request failed:\n\n' + err.message;
+ output.textContent = ' Request failed:\n\n' + err.message;
         }
     }
 
